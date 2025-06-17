@@ -91,14 +91,24 @@
 // module.exports = upload;
 
 
-
-
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
 // Use memory storage for production (Render) to avoid file system issues
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production' || 
+                     process.env.RENDER === 'true' || 
+                     process.env.RENDER_SERVICE_ID || 
+                     !!process.env.RENDER_EXTERNAL_URL;
+
+console.log('Environment check:', {
+  NODE_ENV: process.env.NODE_ENV,
+  RENDER: process.env.RENDER,
+  RENDER_SERVICE_ID: !!process.env.RENDER_SERVICE_ID,
+  RENDER_EXTERNAL_URL: !!process.env.RENDER_EXTERNAL_URL,
+  isProduction: isProduction,
+  platform: process.platform
+});
 
 let storage;
 
@@ -137,6 +147,13 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
+
+// Log multer configuration
+console.log('Multer configured with:', {
+  storageType: isProduction ? 'memory' : 'disk',
+  maxFileSize: '5MB',
+  allowedTypes: 'application/pdf'
 });
 
 module.exports = upload;
