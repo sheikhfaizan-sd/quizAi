@@ -62,17 +62,68 @@
 // };
 
 // module.exports = errorHandler;
+// const multer = require('multer');
+// const path = require('path');
+
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, 'uploads/');
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, `pdf-${Date.now()}${path.extname(file.originalname)}`);
+//   }
+// });
+
+// const fileFilter = (req, file, cb) => {
+//   if (file.mimetype === 'application/pdf') {
+//     cb(null, true);
+//   } else {
+//     cb(new Error('Only PDF files are allowed'), false);
+//   }
+// };
+
+// const upload = multer({
+//   storage: storage,
+//   fileFilter: fileFilter,
+//   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+// });
+
+// module.exports = upload;
+
+
+
+
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, `pdf-${Date.now()}${path.extname(file.originalname)}`);
+// Use memory storage for production (Render) to avoid file system issues
+const isProduction = process.env.NODE_ENV === 'production';
+
+let storage;
+
+if (isProduction) {
+  // Use memory storage for production
+  storage = multer.memoryStorage();
+  console.log('Using memory storage for file uploads (production mode)');
+} else {
+  // Use disk storage for development
+  const uploadsDir = path.join(__dirname, '..', 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log('Created uploads directory:', uploadsDir);
   }
-});
+
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+      cb(null, `pdf-${Date.now()}${path.extname(file.originalname)}`);
+    }
+  });
+  console.log('Using disk storage for file uploads (development mode)');
+}
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === 'application/pdf') {
